@@ -1,0 +1,5 @@
+#!/bin/bash
+clear
+echo "Files change. Rebuilding."
+rc compile src/fc.rez && osascript -e 'tell application "Google Chrome" to reload active tab of front window'
+echo "Finished."

@@ -1,0 +1,202 @@
+%%
+%% Game created with Rez 1.2.10
+%% http://rez-lang.com/
+%% By Matt Mower <self@mattmower.com>
+%% Released 2022-2024 under the GPLv3 license
+%%
+
+@game {
+  name: "fc"
+  title: "Fleet Commander"
+  author: "Matt Mower"
+  author_email: "self@mattmower.com"
+  studio: "Narrative Drift Games"
+  game_homepage: "https://rez-lang.com/"
+
+  IFID: "C17476D4-21A3-11EF-8C1F-CA41670CF0BB"
+  archive_format: 1
+
+  version: "0.1"
+  created: "2024-06-03 12:21:08.084812Z"
+
+  initial_scene_id: #s_hello
+
+  %(../lib/stdlib.rez)
+
+  layout: ```
+  <!-- Main Content -->
+  <section class="main-content is-fullheight">
+    <div class="container">${content}</div>
+  </section>
+  <!-- End -->
+  ```
+
+  %%
+  %% The game proper begins here
+  %%
+
+  @enum gender [:m :f]
+
+  @script {
+    function FCRandomGender() {
+      return Boolean.rand() ? "m" : "f";
+    }
+  }
+
+  @actor t_actor {
+    $template: true
+
+    gender: _
+    given_name: _
+    family_name: _
+    name: ^p{return `${this.given_name} ${this.family_name}`;}
+
+    on_copy: (actor) => {
+      actor.gender = FCRandomGender();
+      actor.given_name = (actor.gender == "m") ? $male_names.randomElement() : $female_names.randomElement();
+      actor.family_name = $family_names.randomElement();
+      return actor;
+    }
+  }
+
+  @actor player<t_actor> {
+    rank: :comm
+  }
+
+  @object universe {
+    $template: true
+    $global: true
+  }
+
+  @enum branch [:command :operations :helm :engineering :science :medical]
+  @enum rank [:adm :comm :cap :cmdr :sub_cmdr :lt :sub_lt :ens]
+
+  @actor t_officer<t_actor> {
+    $template: true
+    $global: true
+
+    branch: _
+    rank: _
+
+    level: 1
+    xp: 0
+  }
+
+  @script {
+
+  }
+
+  @object t_officer_stat_block {
+    $template: true
+    $global: true
+  }
+
+  @object t_ship {
+    $template: true
+    $global: true
+
+    role: :ship
+
+    name: _
+
+    stat_block_id: _
+
+    officer_pool_id: _
+  }
+
+  @object t_ship_stat_block {
+    $template: true
+    $global: true
+  }
+
+  @object t_stat {
+    $template: true
+    $global: true
+  }
+
+  @object t_officer_pool {
+    $template: true
+    $global: true
+
+    cap_id: _
+    xo_id: _
+
+    command: _
+    operations: _
+    tactical: _
+    helm: _
+    engineering: _
+    science: _
+    medical: _
+
+    on_copy: (pool) => {
+      pool.command = [];
+      pool.operations = [];
+      pool.tactical = [];
+      pool.helm = [];
+      pool.engineering = [];
+      pool.science = [];
+      pool.medical = [];
+      return pool;
+    }
+  }
+
+  @script {
+    function FCCreateSurveyShip(name) {
+      const ship = $t_ship.copyWithAutoId();
+      $game.addGameObject(ship);
+
+      ship.name = name;
+
+      const stat_block = $t_ship_stat_block.copyWithAutoId();
+      $game.addGameObject(stat_block);
+      ship.stat_block = stat_block;
+
+      const officer_pool = $t_officer_pool.copyWithAutoId();
+      $game.addGameObject(officer_pool);
+      ship.officer_pool = officer_pool;
+
+      return ship;
+    }
+  }
+
+  @scene s_hello {
+    initial_card_id: #c_hello
+  }
+
+  @card c_hello {
+    content: ```
+    <section class="hero">
+      <div class="hero-body">
+        <p class="title">${card.game.title}</p>
+        <p class="subtitle">From <span class="has-text-primary">${card.game.author}</span></p>
+      </div>
+      <div class="box">
+        <ul>
+          <li><a data-event="card" data-target="c_ending" data-ending="good">Good Ending</a></li>
+          <li><a data-event="card" data-target="c_ending" data-ending="bad">Bad Ending</a></li>
+        </ul>
+      </div>
+    </section>
+    ```
+  }
+
+  @filter filter_ending_style {
+    name: "ending_style"
+    impl: (ending) => {return ending === "good" ? "has-background-success" : "has-background-danger";}
+  }
+
+  @card c_ending {
+    content: ```
+    <section class="hero">
+      <div class="hero-body">
+        <p class="title ${block.ending | ending_style}">Game Over!</p>
+        <p class="subtitle has-text-primary">You got the ${block.ending} ending!</p>
+      </div>
+      <div class="box">
+        <a data-event="card" data-target="c_hello">Play Again</a>
+      </div>
+    </section>
+    ```
+  }
+}
